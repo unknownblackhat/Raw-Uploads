@@ -126,7 +126,7 @@ $s.Speak("You have been hacked by UnknownBlackHat $FN")
 
 Start-Process "https://www.dropbox.com/s/lsp5v2jrkzud3sd/signature.FucSocy.mov?dl=0"
 
-Start-Sleep -s 3
+Start-Sleep -s 1
 
 # Sets up speech module 
 
